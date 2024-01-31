@@ -4,30 +4,32 @@ trigger:
 pool:
   vmImage: ubuntu-latest
 
-steps:
-- task: AzureCLI@2
-  inputs:
-    azureSubscription: 'Pay-As-You-Go (3f9425f7-b0f9-40b7-9c23-beca0c6a8610)'
-    scriptType: 'bash'
-    scriptLocation: 'inlineScript'
-    inlineScript: |
-      docker build -t azuredb2acr.azurecr.io:tag 2048-game
-      az acr login -n azuredb2acr
-      docker push azuredb2acr.azurecr.io/web-game:tag
+jobs:
+- job: BuildAndPush
+  displayName: 'Build and Push to ACR'
+  steps:
+  - task: Docker@2
+    displayName: 'Build and push Docker image'
+    inputs:
+      command: 'buildAndPush'
+      containerRegistry: 'azuredb2acr.azurecr.io'
+      repository: 'web-game'
+      Dockerfile: '2048-game/Dockerfile'
+      tags: 'tag'
 
-- script: cat 01_kubernetes_aks/app-deploy.yaml
-- task: Kubernetes@1
-  inputs:
-    connectionType: 'Azure Resource Manager'
-    azureSubscriptionEndpoint: 'Pay-As-You-Go (3f9425f7-b0f9-40b7-9c23-beca0c6a8610)-7698'
-    azureResourceGroup: 'sandeepbiradar'
-    kubernetesCluster: 'azuredb2aks'
-    namespace: 'default'
-    command: 'apply'
-    useConfigurationFile: true
-    configuration: '01_kubernetes_aks'
-    secretType: 'dockerRegistry'
-    containerRegistryType: 'Azure Container Registry'
-    azureSubscriptionEndpointForSecrets: 'Pay-As-You-Go (3f9425f7-b0f9-40b7-9c23-beca0c6a8610)-7698'
-    azureContainerRegistry: 'azuredb2acr.azurecr.io'
-    forceUpdate: false
+  - task: Kubernetes@1
+    displayName: 'Apply Kubernetes manifests'
+    inputs:
+      connectionType: 'Azure Resource Manager'
+      azureSubscriptionEndpoint: 'Pay-As-You-Go (3f9425f7-b0f9-40b7-9c23-beca0c6a8610)-7698'
+      azureResourceGroup: 'sandeepbiradar'
+      kubernetesCluster: 'azuredb2aks'
+      namespace: 'default'
+      command: 'apply'
+      useConfigurationFile: true
+      configuration: '01_kubernetes_aks'
+      secretType: 'dockerRegistry'
+      containerRegistryType: 'Azure Container Registry'
+      azureSubscriptionEndpointForSecrets: 'Pay-As-You-Go (3f9425f7-b0f9-40b7-9c23-beca0c6a8610)-7698'
+      azureContainerRegistry: 'azuredb2acr.azurecr.io'
+      forceUpdate: false
