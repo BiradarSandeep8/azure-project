@@ -8,14 +8,15 @@ jobs:
 - job: BuildAndPush
   displayName: 'Build and Push to ACR'
   steps:
-  - task: Docker@2
-    displayName: 'Build and push Docker image'
+  - task: AzureCLI@2
     inputs:
-      command: 'buildAndPush'
-      containerRegistry: 'azuredb2acr.azurecr.io'
-      repository: 'web-game'
-      Dockerfile: '2048-game/Dockerfile'
-      tags: 'tag'
+      azureSubscription: 'Pay-As-You-Go (3f9425f7-b0f9-40b7-9c23-beca0c6a8610)-7698'
+      scriptType: 'bash'
+      scriptLocation: 'inlineScript'
+      inlineScript: |
+        docker build -t mylabacr2.azurecr.io/web-game:tag 2048-game
+        az acr login -n mylabacr2
+        docker push mylabacr2.azurecr.io/web-game:tag
 
   - task: Kubernetes@1
     displayName: 'Apply Kubernetes manifests'
